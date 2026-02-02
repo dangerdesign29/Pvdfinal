@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Funcionário - SuperMercado Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyATeWSJX1mSsITEugABJFVKefWbCIuyJPM",
+            authDomain: "gestaomercado-001.firebaseapp.com",
+            projectId: "gestaomercado-001",
+            storageBucket: "gestaomercado-001.firebasestorage.app",
+            messagingSenderId: "541484410097",
+            appId: "1:541484410097:web:77108a82e7273a96373550",
+            measurementId: "G-TQ37LCWYKX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Verificar autenticação
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                // Carregar dados do usuário
+                try {
+                    const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        window.currentUser = {
+                            ...user,
+                            ...userData
+                        };
+                        
+                        // Verificar se é funcionário
+                        if (userData.tipo !== 'funcionario') {
+                            window.location.href = 'admin.html';
+                            return;
+                        }
+                        
+                        // Inicializar sistema do funcionário
+                        if (typeof initFuncionario === 'function') {
+                            initFuncionario();
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao carregar dados do usuário:", error);
+                }
+            }
+        });
+        
+        window.funcionarioLogout = async function() {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        };
+    </script>
+    
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: var(--danger);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .dashboard {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .welcome-card {
+            background: linear-gradient(135deg, var(--secondary), #2980b9);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .disabled-feature {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .disabled-feature:hover {
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-shopping-cart"></i>
+            <span>SuperMercado Pro - Funcionário</span>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">Funcionário</span>
+            <button class="btn-logout" onclick="funcionarioLogout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="welcome-card">
+            <h1 id="welcomeMessage">Bem-vindo, Funcionário!</h1>
+            <p>Selecione uma das opções abaixo para começar</p>
+        </div>
+
+        <div class="features-grid" id="featuresGrid">
+            <!-- Recursos serão carregados dinamicamente baseado nas permissões -->
+        </div>
+    </div>
+
+    <script>
+        async function initFuncionario() {
+            console.log("Inicializando painel do funcionário...");
+            
+            // Atualizar nome do usuário
+            if (window.currentUser) {
+                document.getElementById('userName').textContent = window.currentUser.nome || 'Funcionário';
+                document.getElementById('welcomeMessage').textContent = `Bem-vindo, ${window.currentUser.nome || 'Funcionário'}!`;
+            }
+            
+            // Carregar permissões e mostrar recursos
+            await carregarRecursosFuncionario();
+        }
+        
+        async function carregarRecursosFuncionario() {
+            const user = window.currentUser;
+            const permissoes = user.permissoes || {};
+            const tipoAcesso = user.tipoAcesso || 'caixa';
+            
+            const featuresGrid = document.getElementById('featuresGrid');
+            featuresGrid.innerHTML = '';
+            
+            // Definir recursos baseados no tipo de acesso
+            let recursos = [];
+            
+            switch(tipoAcesso) {
+                case 'caixa':
+                    recursos = [
+                        { id: 'caixa', icon: 'cash-register', title: 'Sistema de Caixa', desc: 'Realizar vendas e emitir comprovantes', enabled: true },
+                        { id: 'produtos', icon: 'search', title: 'Consultar Produtos', desc: 'Buscar produtos e verificar preços', enabled: true },
+                        { id: 'clientes', icon: 'user-plus', title: 'Cadastrar Cliente', desc: 'Cadastrar novos clientes rapidamente', enabled: true }
+                    ];
+                    break;
+                    
+                case 'estoque':
+                    recursos = [
+                        { id: 'caixa', icon: 'cash-register', title: 'Sistema de Caixa', desc: 'Realizar vendas e emitir comprovantes', enabled: true },
+                        { id: 'produtos', icon: 'boxes', title: 'Gerenciar Produtos', desc: 'Adicionar e editar produtos', enabled: true },
+                        { id: 'estoque', icon: 'warehouse', title: 'Controle de Estoque', desc: 'Ajustar estoque e receber mercadorias', enabled: true },
+                        { id: 'relatorios', icon: 'chart-bar', title: 'Relatórios de Estoque', desc: 'Ver relatórios de estoque', enabled: true }
+                    ];
+                    break;
+                    
+                case 'vendas':
+                    recursos = [
+                        { id: 'caixa', icon: 'cash-register', title: 'Sistema de Caixa', desc: 'Realizar vendas e emitir comprovantes', enabled: true },
+                        { id: 'clientes', icon: 'users', title: 'Gerenciar Clientes', desc: 'Cadastrar e editar clientes', enabled: true },
+                        { id: 'vendas', icon: 'receipt', title: 'Histórico de Vendas', desc: 'Ver histórico e cancelar vendas', enabled: true },
+                        { id: 'relatorios', icon: 'chart-pie', title: 'Relatórios de Vendas', desc: 'Gerar relatórios de vendas', enabled: true }
+                    ];
+                    break;
+                    
+                case 'completo':
+                    recursos = [
+                        { id: 'caixa', icon: 'cash-register', title: 'Sistema de Caixa', desc: 'Realizar vendas e emitir comprovantes', enabled: true },
+                        { id: 'produtos', icon: 'boxes', title: 'Gerenciar Produtos', desc: 'Adicionar e editar produtos', enabled: true },
+                        { id: 'estoque', icon: 'warehouse', title: 'Controle de Estoque', desc: 'Ajustar estoque e receber mercadorias', enabled: true },
+                        { id: 'clientes', icon: 'users', title: 'Gerenciar Clientes', desc: 'Cadastrar e editar clientes', enabled: true },
+                        { id: 'vendas', icon: 'receipt', title: 'Histórico de Vendas', desc: 'Ver histórico e cancelar vendas', enabled: true },
+                        { id: 'relatorios', icon: 'chart-pie', title: 'Relatórios', desc: 'Gerar relatórios diversos', enabled: true }
+                    ];
+                    break;
+                    
+                default:
+                    // Permissões customizadas
+                    recursos = [
+                        { id: 'caixa', icon: 'cash-register', title: 'Sistema de Caixa', desc: 'Realizar vendas e emitir comprovantes', enabled: true },
+                        { id: 'produtos', icon: 'boxes', title: 'Gerenciar Produtos', desc: 'Adicionar e editar produtos', enabled: permissoes.produtos },
+                        { id: 'estoque', icon: 'warehouse', title: 'Controle de Estoque', desc: 'Ajustar estoque e receber mercadorias', enabled: permissoes.estoque },
+                        { id: 'clientes', icon: 'users', title: 'Gerenciar Clientes', desc: 'Cadastrar e editar clientes', enabled: permissoes.clientes },
+                        { id: 'vendas', icon: 'receipt', title: 'Histórico de Vendas', desc: 'Ver histórico e cancelar vendas', enabled: permissoes.vendas },
+                        { id: 'relatorios', icon: 'chart-pie', title: 'Relatórios', desc: 'Gerar relatórios diversos', enabled: permissoes.relatorios }
+                    ];
+            }
+            
+            // Adicionar recursos ao grid
+            recursos.forEach(recurso => {
+                const card = document.createElement('div');
+                card.className = `feature-card ${!recurso.enabled ? 'disabled-feature' : ''}`;
+                card.innerHTML = `
+                    <div class="feature-icon">
+                        <i class="fas fa-${recurso.icon}"></i>
+                    </div>
+                    <h3 class="feature-title">${recurso.title}</h3>
+                    <p>${recurso.desc}</p>
+                `;
+                
+                if (recurso.enabled) {
+                    card.onclick = () => acessarRecurso(recurso.id);
+                } else {
+                    card.onclick = () => mostrarAlerta(`Você não tem permissão para acessar ${recurso.title}`, 'error');
+                }
+                
+                featuresGrid.appendChild(card);
+            });
+        }
+        
+        function acessarRecurso(recursoId) {
+            switch(recursoId) {
+                case 'caixa':
+                    window.location.href = 'admin.html?section=caixa';
+                    break;
+                case 'produtos':
+                    window.location.href = 'admin.html?section=produtos';
+                    break;
+                case 'estoque':
+                    window.location.href = 'admin.html?section=produtos';
+                    break;
+                case 'clientes':
+                    window.location.href = 'admin.html?section=clientes';
+                    break;
+                case 'vendas':
+                    window.location.href = 'admin.html?section=vendas';
+                    break;
+                case 'relatorios':
+                    window.location.href = 'admin.html?section=relatorios';
+                    break;
+            }
+        }
+        
+        function mostrarAlerta(mensagem, tipo = 'info') {
+            alert(mensagem); // Em produção, usar um sistema de alerta melhor
+        }
+        
+        // Inicializar quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.currentUser) {
+                initFuncionario();
+            }
+        });
+        
+        window.funcionarioLogout = funcionarioLogout;
+    </script>
+</body>
+</html>
